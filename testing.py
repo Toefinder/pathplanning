@@ -1,7 +1,8 @@
 import numpy as np 
 import pylab as pl
 import math
-from PRM import is_collision, sample_points, generate_road_map, preprocess_query
+from PRM import is_collision, sample_points, \
+        generate_road_map, preprocess_query, plot_road_map
 import sys
 sys.path.append('osr_examples/scripts/')
 import environment_2d
@@ -20,7 +21,7 @@ sx = 1
 sy = 0.5
 gx = 4
 gy = 1.5
-rr = 0.05 # reduce this to have better collision checks
+rr = 0.01 # reduce this to have better collision checks
 
 # # Testing is_collision
 # print("Testing is_collision")
@@ -36,14 +37,6 @@ for i in xrange(len(sample_x)):
     pl.plot([sample_x[i]], [sample_y[i]], "bo", markersize=5)
 
 # Testing generate_road_map
-def plot_road_map(road_map, sample_x, sample_y):
-    for i in xrange(len(road_map)):
-        for ii in xrange(len(road_map[i])):
-            ind = road_map[i][ii]
-
-            pl.plot([sample_x[i], sample_x[ind]], \
-                    [sample_y[i], sample_y[ind]], "-k") 
-
 road_map, sample_kd_tree = generate_road_map(sample_x, sample_y, rr)
 # plot_road_map(road_map, sample_x, sample_y)
 
@@ -55,7 +48,7 @@ gy = y_goal
 full_sample_x, full_sample_y, full_road_map = preprocess_query(sx, sy, gx, gy, rr, \
                                                                 sample_x, sample_y, road_map, sample_kd_tree)
 plot_road_map(full_road_map, full_sample_x, full_sample_y)
-print(full_road_map[-2])
-print(full_road_map[-1])
+# print(full_road_map[-2])
+# print(full_road_map[-1])
 
 pl.show(block = True)

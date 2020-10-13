@@ -12,6 +12,8 @@ np.random.seed(4)
 env = environment_2d.Environment(10, 6, 5)
 pl.clf()
 env.plot()
+
+# Generate a random query
 q = env.random_query()
 if q is not None:
     x_start, y_start, x_goal, y_goal = q
@@ -20,9 +22,11 @@ if q is not None:
 # Definition of the key constants
 MAX_EDGE_LEN = 10 # the maximum radius to find connections
 N_KNN = 10 # number of edges from one sampled point
-N_SAMPLE = 50 # number of sampled points
+N_SAMPLE = 500 # number of sampled points
 N_KNN_SPECIAL = 20 # number of edges from start point and goal points
+rr = 0.01 # the minimum size to check for connections along line segment
 
+### Definitions of all the key helper functions and class ###
 def is_collision(sx, sy, gx, gy, rr):
     """
     :param sx: x coordinate of the first node
@@ -170,15 +174,13 @@ def dijkstra_planning(sx, sy, gx, gy, full_road_map, full_sample_x, full_sample_
 
     while True:
         if not open_set:
-            print("Cannot find path")
             path_found = False
             break
-
+        
         c_id = min(open_set, key = lambda o: open_set[o].cost)
         current = open_set[c_id]
 
         if c_id == len(full_road_map) - 1:
-            print("Goal is found")
             goal_node.parent_index = current.parent_index
             goal_node.cost = current.cost
             break
@@ -206,8 +208,8 @@ def dijkstra_planning(sx, sy, gx, gy, full_road_map, full_sample_x, full_sample_
                     open_set[n_id].cost = node.cost
                     open_set[n_id].parent_index = c_id
             else:
-                open_set[n_id] = Node
-    # endWhile
+                open_set[n_id] = node
+   
     if path_found is False:
         return [], []
 
@@ -281,18 +283,35 @@ def preprocess_query(sx, sy, gx, gy, rr, sample_x, sample_y, road_map, sample_kd
         full_road_map[-1].append(N_SAMPLE)
 
     return full_sample_x, full_sample_y, full_road_map
-    
 
+def plot_road_map(road_map, sample_x, sample_y):
+    for i in xrange(len(road_map)):
+        for ii in xrange(len(road_map[i])):
+            ind = road_map[i][ii]
 
+            pl.plot([sample_x[i], sample_x[ind]], \
+                    [sample_y[i], sample_y[ind]], "-k") 
 
-    
+### Main program ###
+# Preprocess the environment
+sample_x, sample_y, road_map, sample_kd_tree = preprocess_prm(env.size_x, env.size_y, rr)
 
+# Preprocess the query
+full_sample_x, full_sample_y, full_road_map = preprocess_query(x_start, y_start, \
+                                                                x_goal, y_goal, \
+                                                                rr, \
+                                                                sample_x, sample_y,
+                                                                road_map, sample_kd_tree)
 
-    
+# plot_road_map(full_road_map, full_sample_x, full_sample_y)                                            
+# Search for shortest route
+rx, ry = dijkstra_planning(x_start, y_start, x_goal, y_goal, full_road_map, full_sample_x, full_sample_y)
+if not rx:
+    print("Cannot find a path")
+else:
+    print("Path is found")
+    pl.plot(rx, ry, "-b")
 
-
-
-
-# pl.show(block=True)   
+pl.show(block=True)   
 
 
