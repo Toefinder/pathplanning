@@ -1,6 +1,7 @@
 import numpy as np 
 import pylab as pl
 import math
+from scipy.spatial import cKDTree
 # import matplotlib.pyplot as pl
 import sys
 sys.path.append('osr_examples/scripts/')
@@ -18,7 +19,7 @@ if q is not None:
 # Definition of the key constants
 MAX_EDGE_LEN = 2 # the maximum radius to find connections
 N_KNN = 10 # number of edges from one sampled point
-N_SAMPLE = 100 # number of sampled points
+N_SAMPLE = 200 # number of sampled points
 
 def is_collision(sx, sy, gx, gy, rr):
     """
@@ -41,7 +42,6 @@ def is_collision(sx, sy, gx, gy, rr):
     x_step = dx / n_step
     y_step = dy / n_step
     for i in xrange(n_step + 1):
-        print(x, y)
         if env.check_collision(x, y):
             return True
 
@@ -103,6 +103,40 @@ class Node:
     def __str__(self):
         return str(self.x) + "," + str(self.y) + "," + \
                 str(self.cost) + "," + str(self.parent_index)
+
+
+def generate_road_map(sample_x, sample_y, rr):
+    """
+    Generate the probabilistic roadmap from sample points
+    :param sample_x: x coordinates of sampled points
+    :param sample_y: y coordinates of sampled points
+    :type sample_x, sample_y: lists
+    :param rr: robot size to check for collision
+    :type rr: float
+    :return road_map: the roadmap generated
+    :rtype: list of lists
+    """
+    road_map = []
+    sample_kd_tree = cKDTree(np.vstack((sample_x, sample_y)).T)
+
+    for (i, ix, iy) in zip(range(N_SAMPLE), sample_x, sample_y):
+        dists, indexes = sample_kd_tree.query([ix, iy], k = N_SAMPLE)
+        edge_id = []
+
+        for ii in range(1, len(indexes)):
+            nx = sample_x[indexes[ii]]
+            ny = sample_y[indexes[ii]]
+
+            # need to check if the dists should be used instead of is_too_long
+            if not is_collision(ix, iy, nx, ny, rr) and dists[ii] <= MAX_EDGE_LEN:
+                edge_id.append(indexes[ii])
+
+            if len(edge_id) >= N_KNN:
+                break
+
+        road_map.append(edge_id)
+
+    return road_map
 
 
 # pl.show(block=True)   
