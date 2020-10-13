@@ -1,7 +1,7 @@
 import numpy as np 
 import pylab as pl
 import math
-from PRM import is_collision, sample_points, generate_road_map
+from PRM import is_collision, sample_points, generate_road_map, preprocess_query
 import sys
 sys.path.append('osr_examples/scripts/')
 import environment_2d
@@ -44,7 +44,18 @@ def plot_road_map(road_map, sample_x, sample_y):
             pl.plot([sample_x[i], sample_x[ind]], \
                     [sample_y[i], sample_y[ind]], "-k") 
 
-road_map = generate_road_map(sample_x, sample_y, rr)
-plot_road_map(road_map, sample_x, sample_y)
+road_map, sample_kd_tree = generate_road_map(sample_x, sample_y, rr)
+# plot_road_map(road_map, sample_x, sample_y)
+
+# Testing preprocess_query
+sx = x_start
+sy = y_start
+gx = x_goal
+gy = y_goal
+full_sample_x, full_sample_y, full_road_map = preprocess_query(sx, sy, gx, gy, rr, \
+                                                                sample_x, sample_y, road_map, sample_kd_tree)
+plot_road_map(full_road_map, full_sample_x, full_sample_y)
+print(full_road_map[-2])
+print(full_road_map[-1])
 
 pl.show(block = True)

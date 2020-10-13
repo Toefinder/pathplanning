@@ -1,6 +1,7 @@
 import numpy as np 
 import pylab as pl
 import math
+import copy
 from scipy.spatial import cKDTree
 # import matplotlib.pyplot as pl
 import sys
@@ -17,9 +18,9 @@ if q is not None:
     env.plot_query(x_start, y_start, x_goal, y_goal)
 
 # Definition of the key constants
-MAX_EDGE_LEN = 2 # the maximum radius to find connections
+MAX_EDGE_LEN = 10 # the maximum radius to find connections
 N_KNN = 10 # number of edges from one sampled point
-N_SAMPLE = 200 # number of sampled points
+N_SAMPLE = 50 # number of sampled points
 N_KNN_SPECIAL = 20 # number of edges from start point and goal points
 
 def is_collision(sx, sy, gx, gy, rr):
@@ -63,6 +64,8 @@ def is_too_long(sx, sy, gx, gy, rr):
             False otherwise
     :rtype: boolean
     """
+    dx = float(gx - sx)
+    dy = float(gy - sy)
     distance = math.hypot(dx,dy)
     if distance > MAX_EDGE_LEN:
         return True
@@ -192,8 +195,8 @@ def dijkstra_planning(sx, sy, gx, gy, full_road_map, full_sample_x, full_sample_
             dy = full_sample_y[n_id] - current.y
             distance = math.hypot(dx, dy)
 
-            node = Node(x = full_sample_x[n_id], y = full_sample_y[n_id], \ 
-                        cost = current.cost + distance, c_id)
+            node = Node(x = full_sample_x[n_id], y = full_sample_y[n_id], \
+                        cost = current.cost + distance, parent_index = c_id)
             
             if n_id in closed_set:
                 continue
@@ -220,7 +223,7 @@ def dijkstra_planning(sx, sy, gx, gy, full_road_map, full_sample_x, full_sample_
     
     return rx, ry
 
-def prm_preprocessing(size_x, size_y, rr):
+def preprocess_prm(size_x, size_y, rr):
     """
     Preprocess the given environment to generate road_map 
     :param size_x: size of the 
@@ -237,7 +240,7 @@ def prm_preprocessing(size_x, size_y, rr):
     
     return sample_x, sample_y, road_map, sample_kd_tree
 
-def handle_query(sx, sy, gx, gy, sample_x, sample_y, road_map, sample_kd_tree):
+def preprocess_query(sx, sy, gx, gy, rr, sample_x, sample_y, road_map, sample_kd_tree):
     """
     Handle each query specifying start point and goal point
     :param sx: starting x coordinate
@@ -248,10 +251,39 @@ def handle_query(sx, sy, gx, gy, sample_x, sample_y, road_map, sample_kd_tree):
     :return full_sample_x, full_sample_y: append startpoint and goal point
     :return full_road_map: road_map when startpoint and goal point are added
     """
-    full_sample_x = sample_x.extend([sx, gx])
-    full_sample_x = sample_y.extend([sy, gy])
+    full_sample_x = copy.deepcopy(sample_x)
+    full_sample_y = copy.deepcopy(sample_y)
 
+    full_sample_x.extend([sx, gx])
+    full_sample_y.extend([sy, gy])
+    full_road_map = copy.deepcopy(road_map)
+    for (i, ix, iy) in zip(range(N_SAMPLE, N_SAMPLE+2), \
+                            full_sample_x[N_SAMPLE:], full_sample_y[N_SAMPLE:]):
+        dists, indexes = sample_kd_tree.query([ix, iy], k = N_SAMPLE)
+        edge_id = []
+
+        for ii in range(1, len(indexes)):
+            nx = sample_x[indexes[ii]]
+            ny = sample_y[indexes[ii]]
+
+            # need to check if the dists should be used instead of is_too_long
+            if not is_collision(ix, iy, nx, ny, rr) and not is_too_long(ix, iy, nx, ny, rr):
+                edge_id.append(indexes[ii])
+                full_road_map[indexes[ii]].append(i)
+
+            if len(edge_id) >= N_KNN:
+                break
+
+        full_road_map.append(edge_id)
+    # check between start and goal points too, since these are not in sample_kd_tree
+    if not is_collision(sx, sy, gx, gy, rr) and not is_too_long(sx, sy, gx, gy, rr):
+        full_road_map[-2].append(N_SAMPLE+1)
+        full_road_map[-1].append(N_SAMPLE)
+
+    return full_sample_x, full_sample_y, full_road_map
     
+
+
 
     
 
