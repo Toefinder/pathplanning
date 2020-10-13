@@ -3,21 +3,16 @@ import pylab as pl
 import math
 import copy
 from scipy.spatial import cKDTree
-# import matplotlib.pyplot as pl
 import sys
 sys.path.append('osr_examples/scripts/')
 import environment_2d
 pl.ion()
 np.random.seed(4)
+
+# Initialize the environment
 env = environment_2d.Environment(10, 6, 5)
 pl.clf()
 env.plot()
-
-# Generate a random query
-q = env.random_query()
-if q is not None:
-    x_start, y_start, x_goal, y_goal = q
-    env.plot_query(x_start, y_start, x_goal, y_goal)
 
 # Definition of the key constants
 MAX_EDGE_LEN = 10 # the maximum radius to find connections
@@ -293,25 +288,35 @@ def plot_road_map(road_map, sample_x, sample_y):
                     [sample_y[i], sample_y[ind]], "-k") 
 
 ### Main program ###
-# Preprocess the environment
-sample_x, sample_y, road_map, sample_kd_tree = preprocess_prm(env.size_x, env.size_y, rr)
+def main():
 
-# Preprocess the query
-full_sample_x, full_sample_y, full_road_map = preprocess_query(x_start, y_start, \
-                                                                x_goal, y_goal, \
-                                                                rr, \
-                                                                sample_x, sample_y,
-                                                                road_map, sample_kd_tree)
+    # Generate a random query
+    q = env.random_query()
+    if q is not None:
+        x_start, y_start, x_goal, y_goal = q
+        env.plot_query(x_start, y_start, x_goal, y_goal)
 
-# plot_road_map(full_road_map, full_sample_x, full_sample_y)                                            
-# Search for shortest route
-rx, ry = dijkstra_planning(x_start, y_start, x_goal, y_goal, full_road_map, full_sample_x, full_sample_y)
-if not rx:
-    print("Cannot find a path")
-else:
-    print("Path is found")
-    pl.plot(rx, ry, "-b")
+    # Preprocess the environment
+    sample_x, sample_y, road_map, sample_kd_tree = preprocess_prm(env.size_x, env.size_y, rr)
 
-pl.show(block=True)   
+    # Preprocess the query
+    full_sample_x, full_sample_y, full_road_map = preprocess_query(x_start, y_start, \
+                                                                    x_goal, y_goal, \
+                                                                    rr, \
+                                                                    sample_x, sample_y,
+                                                                    road_map, sample_kd_tree)
 
+    # plot_road_map(full_road_map, full_sample_x, full_sample_y) 
+                                            
+    # Search for shortest route
+    rx, ry = dijkstra_planning(x_start, y_start, x_goal, y_goal, full_road_map, full_sample_x, full_sample_y)
+    if not rx:
+        print("Cannot find a path")
+    else:
+        print("Path is found")
+        pl.plot(rx, ry, "-b")
 
+    pl.show(block=True)   
+
+if __name__ == '__main__':
+    main()
