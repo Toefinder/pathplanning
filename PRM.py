@@ -19,6 +19,7 @@ MAX_EDGE_LEN = 10 # the maximum radius to find connections
 N_KNN = 10 # number of edges from one sampled point
 N_SAMPLE = 500 # number of sampled points
 N_KNN_SPECIAL = 20 # number of edges from start point and goal points
+MAX_POSTPRO = 200 # number of iterations for postprocess 
 rr = 0.01 # the minimum size to check for connections along line segment
 
 ### Definitions of all the key helper functions and class ###
@@ -287,6 +288,24 @@ def plot_road_map(road_map, sample_x, sample_y):
             pl.plot([sample_x[i], sample_x[ind]], \
                     [sample_y[i], sample_y[ind]], "-k") 
 
+def post_process(rx, ry, rr):
+    """
+    :param rx: list of x coordinates on the path
+    :param ry: list of y coordinates on the path
+    :type rx, ry: lists
+    :return shorter_rx, shorter_ry: path after performing shortcutting
+    :rtype shorter_rx, shorter_ry: lists
+    """
+    shorter_rx = copy.deepcopy(rx)
+    shorter_ry = copy.deepcopy(ry)
+    for i in xrange(MAX_POSTPRO):
+        t1, t2 = np.random.choice(len(shorter_rx), 2)
+        if not is_collision(shorter_rx[t1], shorter_ry[t1],
+                            shorter_rx[t2], shorter_ry[t2], rr):
+            del(shorter_rx[t1+1: t2])
+            del(shorter_ry[t1+1: t2])
+    return shorter_rx, shorter_ry
+
 ### Main program ###
 def main():
 
@@ -315,6 +334,8 @@ def main():
     else:
         print("Path is found")
         pl.plot(rx, ry, "-b")
+        shorter_rx, shorter_ry = post_process(rx, ry, rr)
+        pl.plot(shorter_rx, shorter_ry, "-g")
 
     pl.show(block=True)   
 

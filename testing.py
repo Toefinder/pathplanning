@@ -69,11 +69,15 @@ full_sample_x, full_sample_y, full_road_map = preprocess_query(x_start, y_start,
                                                         rr, \
                                                         sample_x, sample_y,
                                                         road_map, sample_kd_tree)
+# Handle query
 rx, ry = dijkstra_planning(x_start, y_start, x_goal, y_goal, full_road_map, full_sample_x, full_sample_y)
 if not rx:
     print("Cannot find a path")
 else:
     print("Path is found")
     pl.plot(rx, ry, "-b")
+
+    shorter_rx, shorter_ry = post_process(rx, ry, rr)
+    pl.plot(shorter_rx, shorter_ry, "-g")
 
 pl.show(block = True)
