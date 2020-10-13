@@ -20,6 +20,7 @@ if q is not None:
 MAX_EDGE_LEN = 2 # the maximum radius to find connections
 N_KNN = 10 # number of edges from one sampled point
 N_SAMPLE = 200 # number of sampled points
+N_KNN_SPECIAL = 20 # number of edges from start point and goal points
 
 def is_collision(sx, sy, gx, gy, rr):
     """
@@ -27,7 +28,7 @@ def is_collision(sx, sy, gx, gy, rr):
     :param sy: y coordinate of the first node
     :param gx: x coordinate of the destination node
     :param gy: y coordinates of the destination node
-    :param rr: robot radius, the smallest length to check
+    :param rr: the smallest length to check
     :type sx, sy, gx, gy, rr: float
     :return: True if the segment between the two nodes is blocked,
             False otherwise
@@ -111,10 +112,12 @@ def generate_road_map(sample_x, sample_y, rr):
     :param sample_x: x coordinates of sampled points
     :param sample_y: y coordinates of sampled points
     :type sample_x, sample_y: lists
-    :param rr: robot size to check for collision
+    :param rr: size to check for collision
     :type rr: float
     :return road_map: the roadmap generated
-    :rtype: list of lists
+    :rtype road_map: list of lists
+    :return sample_kd_tree: cKDTree containing the sample points
+    :rtype sample_kd_tree: scipy.spatial.cKDTree
     """
     road_map = []
     sample_kd_tree = cKDTree(np.vstack((sample_x, sample_y)).T)
@@ -136,7 +139,7 @@ def generate_road_map(sample_x, sample_y, rr):
 
         road_map.append(edge_id)
 
-    return road_map
+    return road_map, sample_kd_tree
 
 def dijkstra_planning(sx, sy, gx, gy, full_road_map, full_sample_x, full_sample_y):
     """
@@ -217,7 +220,43 @@ def dijkstra_planning(sx, sy, gx, gy, full_road_map, full_sample_x, full_sample_
     
     return rx, ry
 
+def prm_preprocessing(size_x, size_y, rr):
+    """
+    Preprocess the given environment to generate road_map 
+    :param size_x: size of the 
+    :param size_x: the size of the environment in x direction
+    :type size_x, size_y: float
+    :param rr: size to check the collision
+    :return sample_x, sample_y, road_map, sample_kd_tree
+    :rtype sample_x, sample_y: lists
+    :rtype road_map: list of lists
+    :rtype sample_kd_tree: scipy.spatial.cKDTree
+    """
+    sample_x, sample_y = sample_points(size_x, size_y)
+    road_map, sample_kd_tree = generate_road_map(sample_x, sample_y, rr)
+    
+    return sample_x, sample_y, road_map, sample_kd_tree
 
+def handle_query(sx, sy, gx, gy, sample_x, sample_y, road_map, sample_kd_tree):
+    """
+    Handle each query specifying start point and goal point
+    :param sx: starting x coordinate
+    :param sy: starting y coordinate
+    :param gx: goal x coordinate
+    :param gy: goal y coordinate
+    :type sx, sy, gx, gy: float
+    :return full_sample_x, full_sample_y: append startpoint and goal point
+    :return full_road_map: road_map when startpoint and goal point are added
+    """
+    full_sample_x = sample_x.extend([sx, gx])
+    full_sample_x = sample_y.extend([sy, gy])
+
+    
+
+    
+
+
+    
 
 
 
