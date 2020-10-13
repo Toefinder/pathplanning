@@ -4,7 +4,7 @@ import math
 import copy
 from scipy.spatial import cKDTree
 import sys
-sys.path.append('osr_examples/scripts/')
+sys.path.append('./osr_examples/scripts/')
 import environment_2d
 pl.ion()
 np.random.seed(4)
